@@ -3,7 +3,7 @@
 #
 
 --disable_query_log
-create table test._digests(d varchar(32) primary key);
+create table test._digests(d varchar(64) primary key);
 
 delimiter ~~;
 create function test.check_digest(digest varchar(255))
@@ -11,7 +11,7 @@ returns tinyint
 not deterministic
 begin
   declare digest_exists tinyint;
-  if length(digest) != 32 or conv(digest, 16, 10) = 0 then
+  if length(digest) != 64 or digest is null then
     return 0;
   end if;
   select exists (select d from test._digests where d = digest) into digest_exists;

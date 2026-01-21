@@ -59,7 +59,7 @@ table_esms_by_digest::m_share=
   &m_table_lock,
   { C_STRING_WITH_LEN("CREATE TABLE events_statements_summary_by_digest("
                       "SCHEMA_NAME VARCHAR(64) comment 'Database name. Records are summarised together with DIGEST.',"
-                      "DIGEST VARCHAR(32) comment 'Performance Schema digest. Records are summarised together with SCHEMA NAME.',"
+                      "DIGEST VARCHAR(64) comment 'Performance Schema digest. Records are summarised together with SCHEMA NAME.',"
                       "DIGEST_TEXT LONGTEXT comment 'The unhashed form of the digest.',"
                       "COUNT_STAR BIGINT unsigned not null comment 'Number of summarized events',"
                       "SUM_TIMER_WAIT BIGINT unsigned not null comment 'Total wait time of the summarized events that are timed.',"

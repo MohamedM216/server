@@ -19,7 +19,7 @@
 */
 
 #include "mariadb.h"
-#include "my_md5.h"
+#include "sha2.h"     // SHA256
 #include "unireg.h"
 
 #include "sql_string.h"
@@ -157,11 +157,13 @@ inline void store_token_identifier(sql_digest_storage* digest_storage,
   }
 }
 
-void compute_digest_md5(const sql_digest_storage *digest_storage, unsigned char *md5)
+void compute_digest_hash(const sql_digest_storage *digest_storage, unsigned char *hash)
 {
-  compute_md5_hash(md5,
-                   (const char *) digest_storage->m_token_array,
-                   digest_storage->m_byte_count);
+  static_assert(DIGEST_HASH_SIZE == SHA256_DIGEST_LENGTH,
+                "DIGEST is no longer SHA256, fix compute_digest_hash()");
+  SHA256(digest_storage->m_token_array,
+         digest_storage->m_byte_count,
+         hash);
 }
 
 /*

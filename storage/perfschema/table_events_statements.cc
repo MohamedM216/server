@@ -34,7 +34,6 @@
 #include "pfs_timer.h"
 #include "sp_head.h" /* TYPE_ENUM_FUNCTION, ... */
 #include "table_helper.h"
-#include "my_md5.h"
 #include "pfs_buffer_container.h"
 
 THR_LOCK table_events_statements_current::m_table_lock;
@@ -66,7 +65,7 @@ table_events_statements_current::m_share=
                       "TIMER_WAIT BIGINT unsigned comment 'Value in picoseconds of the event''s duration or NULL if the event has not ended or timing is not collected.',"
                       "LOCK_TIME bigint unsigned not null comment 'Time in picoseconds spent waiting for locks. The time is calculated in microseconds but stored in picoseconds for compatibility with other timings.',"
                       "SQL_TEXT LONGTEXT comment 'The SQL statement, or NULL if the command is not associated with an SQL statement.',"
-                      "DIGEST VARCHAR(32) comment 'Statement digest.',"
+                      "DIGEST VARCHAR(64) comment 'Statement digest.',"
                       "DIGEST_TEXT LONGTEXT comment 'Statement digest text.',"
                       "CURRENT_SCHEMA VARCHAR(64) comment 'Statement''s default database for the statement, or NULL if there was none.',"
                       "OBJECT_TYPE VARCHAR(64) comment 'NULL for top level statements. The parent statement object type for nested statements (stored programs).',"
@@ -131,7 +130,7 @@ table_events_statements_history::m_share=
                       "TIMER_WAIT BIGINT unsigned comment 'Value in picoseconds of the event''s duration or NULL if the event has not ended or timing is not collected.',"
                       "LOCK_TIME bigint unsigned not null comment 'Time in picoseconds spent waiting for locks. The time is calculated in microseconds but stored in picoseconds for compatibility with other timings.',"
                       "SQL_TEXT LONGTEXT comment 'The SQL statement, or NULL if the command is not associated with an SQL statement.',"
-                      "DIGEST VARCHAR(32) comment 'Statement digest.',"
+                      "DIGEST VARCHAR(64) comment 'Statement digest.',"
                       "DIGEST_TEXT LONGTEXT comment 'Statement digest text.',"
                       "CURRENT_SCHEMA VARCHAR(64) comment 'Statement''s default database for the statement, or NULL if there was none.',"
                       "OBJECT_TYPE VARCHAR(64) comment 'NULL for top level statements. The parent statement object type for nested statements (stored programs).',"
@@ -196,7 +195,7 @@ table_events_statements_history_long::m_share=
                       "TIMER_WAIT BIGINT unsigned comment 'Value in picoseconds of the event''s duration or NULL if the event has not ended or timing is not collected.',"
                       "LOCK_TIME bigint unsigned not null comment 'Time in picoseconds spent waiting for locks. The time is calculated in microseconds but stored in picoseconds for compatibility with other timings.',"
                       "SQL_TEXT LONGTEXT comment 'The SQL statement, or NULL if the command is not associated with an SQL statement.',"
-                      "DIGEST VARCHAR(32) comment 'Statement digest.',"
+                      "DIGEST VARCHAR(64) comment 'Statement digest.',"
                       "DIGEST_TEXT LONGTEXT comment 'Statement digest text.',"
                       "CURRENT_SCHEMA VARCHAR(64) comment 'Statement''s default database for the statement, or NULL if there was none.',"
                       "OBJECT_TYPE VARCHAR(64) comment 'NULL for top level statements. The parent statement object type for nested statements (stored programs).',"
@@ -368,10 +367,10 @@ void table_events_statements_common::make_row_part_2(const sql_digest_storage *d
   if (safe_byte_count > 0 &&
       safe_byte_count <= pfs_max_digest_length)
   {
-    /* Generate the DIGEST string from the MD5 digest  */
-    MD5_HASH_TO_STRING(digest->m_md5,
+    /* Generate the DIGEST string from the digest */
+    DIGEST_HASH_TO_STRING(digest->m_hash,
                        m_row.m_digest.m_digest);
-    m_row.m_digest.m_digest_length= MD5_HASH_TO_STRING_LENGTH;
+    m_row.m_digest.m_digest_length= DIGEST_HASH_TO_STRING_LENGTH;
 
     /* Generate the DIGEST_TEXT string from the token array */
     compute_digest_text(digest, &m_row.m_digest.m_digest_text);
