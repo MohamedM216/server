@@ -19,7 +19,7 @@
 */
 
 #include "mariadb.h"
-#include "sha2.h"     // SHA256
+#include <openssl/evp.h>     // SHA256
 #include "unireg.h"
 
 #include "sql_string.h"
@@ -161,9 +161,15 @@ void compute_digest_hash(const sql_digest_storage *digest_storage, unsigned char
 {
   static_assert(DIGEST_HASH_SIZE == SHA256_DIGEST_LENGTH,
                 "DIGEST is no longer SHA256, fix compute_digest_hash()");
-  SHA256(digest_storage->m_token_array,
-         digest_storage->m_byte_count,
-         hash);
+  unsigned int hash_len = 0;
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  if (mdctx != NULL) {
+    if (EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL)) {
+      EVP_DigestUpdate(mdctx, digest_storage->m_token_array, digest_storage->m_byte_count);
+      EVP_DigestFinal_ex(mdctx, hash, &hash_len);
+    }
+    EVP_MD_CTX_free(mdctx);
+  }
 }
 
 /*
