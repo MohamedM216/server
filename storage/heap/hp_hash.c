@@ -395,66 +395,62 @@ int hp_rec_key_cmp(HP_KEYDEF *keydef, const uchar *rec1, const uchar *rec2)
     if (seg->type == HA_KEYTYPE_TEXT)
     {
       CHARSET_INFO *cs= seg->charset;
-      size_t char_length1;
-      size_t char_length2;
-      uchar *pos1= (uchar*)rec1 + seg->start;
-      uchar *pos2= (uchar*)rec2 + seg->start;
+      const uchar *pos1= rec1 + seg->start;
+      const uchar *pos2= rec2 + seg->start;
       if (cs->mbmaxlen > 1)
       {
-        size_t char_length= seg->length / cs->mbmaxlen;
-        char_length1= hp_charpos(cs, pos1, pos1 + seg->length, char_length);
-        set_if_smaller(char_length1, seg->length);
-        char_length2= hp_charpos(cs, pos2, pos2 + seg->length, char_length);
-        set_if_smaller(char_length2, seg->length);
+        size_t nchars= seg->length / cs->mbmaxlen;
+        if (my_ci_strnncollsp_nchars(cs,
+                                    pos1, seg->length,
+                                    pos2, seg->length,
+                                    nchars,
+                                    0))
+          return 1;
       }
       else
       {
-        char_length1= char_length2= seg->length;
+        if (my_ci_strnncollsp(cs,
+                              pos1, seg->length,
+                              pos2, seg->length))
+          return 1;
       }
-      if (my_ci_strnncollsp(seg->charset,
-                            pos1, char_length1,
-                            pos2, char_length2))
-	return 1;
     }
     else if (seg->type == HA_KEYTYPE_VARTEXT1)  /* Any VARCHAR segments */
     {
-      uchar *pos1= (uchar*) rec1 + seg->start;
-      uchar *pos2= (uchar*) rec2 + seg->start;
-      size_t char_length1, char_length2;
-      size_t pack_length= seg->bit_start;
       CHARSET_INFO *cs= seg->charset;
-      if (pack_length == 1)
+      const uchar *pos1= rec1 + seg->start;
+      const uchar *pos2= rec2 + seg->start;
+      size_t len1, len2;
+      if (seg->bit_start == 1)
       {
-        char_length1= (size_t) *(uchar*) pos1++;
-        char_length2= (size_t) *(uchar*) pos2++;
+        len1= *pos1++;
+        len2= *pos2++;
       }
       else
       {
-        char_length1= uint2korr(pos1);
-        char_length2= uint2korr(pos2);
+        len1= uint2korr(pos1);
+        len2= uint2korr(pos2);
         pos1+= 2;
         pos2+= 2;
       }
       if (cs->mbmaxlen > 1)
       {
-        size_t safe_length1= char_length1;
-        size_t safe_length2= char_length2;
-        size_t char_length= seg->length / cs->mbmaxlen;
-        char_length1= hp_charpos(cs, pos1, pos1 + char_length1, char_length);
-        set_if_smaller(char_length1, safe_length1);
-        char_length2= hp_charpos(cs, pos2, pos2 + char_length2, char_length);
-        set_if_smaller(char_length2, safe_length2);
+        size_t nchars= seg->length / cs->mbmaxlen;
+
+        if (my_ci_strnncollsp_nchars(cs,
+                                    pos1, len1,
+                                    pos2, len2,
+                                    nchars,
+                                    0))
+          return 1;
       }
       else
       {
-        set_if_smaller(char_length1, seg->length);
-        set_if_smaller(char_length2, seg->length);
+        if (my_ci_strnncollsp(cs,
+                              pos1, len1,
+                              pos2, len2))
+          return 1;
       }
-
-      if (my_ci_strnncollsp(seg->charset,
-                            pos1, char_length1,
-                            pos2, char_length2))
-	return 1;
     }
     else
     {
